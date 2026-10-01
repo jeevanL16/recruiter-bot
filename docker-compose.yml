@@ -1,0 +1,39 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: recruiter_bot
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-psecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: secret
+      DB_NAME: recruiter_bot
+      DB_POOL_SIZE: 5
+      MIN_SCORE_DEFAULT: 20.0
+      LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+
+volumes:
+  mysql_data:
