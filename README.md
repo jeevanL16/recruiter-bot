@@ -115,8 +115,8 @@ mysql -u root -p hiring_ops < sql_detective.sql
 
 ## 🤖 AI Usage Disclosure
 
-- **Claude**: Consulted during the initial system design and research phase to explore domain boundary isolation, analyze edge-case behaviors of the Hamilton-Hare apportionment algorithm versus basis points, and outline edge-case test matrices.
-- **Google Antigravity**: Utilized during the implementation and verification phase to author strict TypeScript components, structure the 106-test automated verification suite, validate build artifacts, and perform automated interactive browser verification.
+- **Claude**: Consulted during the architecture and design phase to analyze requirements, refine the 4-factor scoring model, and review edge cases.
+- **Google Antigravity**: Utilized during implementation to author the FastAPI backend, hand-written MySQL repositories, the 40-test automated test suite, and the `sql_detective.sql` investigative queries.
 
 ### 🧪 Tests & Quality Assurance
 
