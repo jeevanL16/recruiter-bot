@@ -89,7 +89,29 @@ Interactive Swagger UI: `http://localhost:8000/docs`.
 
 ---
 
-### 🧪 Tests & SQL Detective (Part 2)
+### 🕵️ Part 2: SQL Detective (`sql_detective.sql`)
 
-- **Test Suite:** 40 unit and integration tests (`pytest -v`) covering scoring logic, skill gates, tie-breaking, and API endpoints. Verified with `ruff` and `mypy`.
-- **SQL Detective (`sql_detective.sql`):** Pure SQL analytics queries answering 5 operational hiring challenges, including multi-posting applicants, recruiter conversion funnels, and window-partitioned recruiter rankings.
+A self-contained analytics script solving 5 operational recruiting investigations on raw hiring funnel data:
+
+```bash
+mysql -u root -p hiring_ops < sql_detective.sql
+```
+
+| # | Question / Objective | Core SQL Technique | Findings & Insight |
+| :-: | :-- | :-- | :-- |
+| **Q1** | Active open postings with recruiter | Inner `JOIN`, `status = 'open'` | Jobs 1, 2, 4, 5 identified. |
+| **Q2** | Final-stage applicants per posting | `LEFT JOIN` (preserves 0-count jobs) + distinct email | Correctly shows 0 for jobs 5 & 6. |
+| **Q3** | Cross-posting applicants (dirty data) | Group by `LOWER(TRIM(email))`, `COUNT(DISTINCT) > 1` | Uncovered duplicate Ananya Rao (cased emails). |
+| **Q4** | Recruiter final conversion rate | `HAVING COUNT(*) >= 3`, float conversion `1.0 *` | Priya Shah: 75.00%, Daniel Ortiz: 50.00%. |
+| **Q5** | Top placement recruiter per department | Window function: `RANK() OVER (PARTITION BY ...)` | Preserves ties fairly without arbitrary cuts. |
+
+**Key Reflections on Part 2:**
+- **Data Normalization:** Email casing discrepancies (e.g. `ananya.rao@mail.com` vs `Ananya.Rao@mail.com`) would distort counts without case-insensitive sanitization.
+- **Fairness in Analytics:** Used window `RANK()` rather than `ROW_NUMBER()` in Q5 so identical top placement counts share first place rather than picking an arbitrary winner.
+
+---
+
+### 🧪 Tests & Quality Assurance
+
+- **40 Automated Tests (`pytest -v`):** Pure scoring unit tests (Sherlock vs Backend Detective = 95.0, edge cases, tie-breaking) and transactional API integration tests.
+- **Static Quality:** Clean passes on `ruff` (linting) and `mypy` (strict type checking).
