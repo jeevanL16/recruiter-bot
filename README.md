@@ -111,6 +111,11 @@ mysql -u root -p hiring_ops < sql_detective.sql
 
 ---
 
+## 🤖 AI Usage Disclosure
+
+- **Claude**: Consulted during the initial system design and research phase to explore domain boundary isolation, analyze edge-case behaviors of the Hamilton-Hare apportionment algorithm versus basis points, and outline edge-case test matrices.
+- **Google Antigravity**: Utilized during the implementation and verification phase to author strict TypeScript components, structure the 106-test automated verification suite, validate build artifacts, and perform automated interactive browser verification.
+
 ### 🧪 Tests & Quality Assurance
 
 - **40 Automated Tests (`pytest -v`):** Pure scoring unit tests (Sherlock vs Backend Detective = 95.0, edge cases, tie-breaking) and transactional API integration tests.
