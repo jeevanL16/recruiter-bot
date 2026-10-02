@@ -2,7 +2,7 @@
 
 # 🎯 Recruiter Bot
 
-**An explainable, bi-directional recruitment matching engine powered by FastAPI & Raw MySQL.**
+**recruitment matching engine powered by FastAPI & Raw MySQL.**
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
