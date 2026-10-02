@@ -1,8 +1,11 @@
+> **Note:** Initial planning document. The final implementation differs in places (for example, overqualified candidates are not penalized, and two_weeks availability is 0.8). The [README.md](../README.md) describes the actual final behavior.
+
 # BUILD.md: Recruiter Bot + SQL Detective (Python + MySQL)
 
 > Single source of truth for building the RecruiterFlow assignment. Work top to bottom. Every phase has a checklist and a "done when" condition.
 
 ---
+
 
 ## 0. Goals and Non-Negotiables
 

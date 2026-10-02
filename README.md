@@ -112,14 +112,19 @@ Open **<http://127.0.0.1:8000/docs>** for the interactive Swagger page, where ev
 | :-- | :-- | :-- |
 | `DB_HOST` | MySQL host | `localhost` |
 | `DB_PORT` | MySQL port | `3306` |
-| `DB_USER` | MySQL user | `your_user` |
+| `DB_USER` | MySQL user (must exist on your server; `root` works locally) | `root` |
 | `DB_PASSWORD` | MySQL password | `your_password_here` |
 | `DB_NAME` | Database name | `recruiter_bot` |
 | `DB_POOL_SIZE` | Connection pool size | `5` |
 | `MIN_SCORE_DEFAULT` | Default minimum score filter | `20.0` |
 | `LOG_LEVEL` | Log verbosity | `INFO` |
+| `WEIGHT_SKILLS` | Skill overlap weight (default: 0.55) | `0.55` |
+| `WEIGHT_EXPERIENCE` | Experience fit weight (default: 0.20) | `0.20` |
+| `WEIGHT_CULTURE` | Culture fit weight (default: 0.10) | `0.10` |
+| `WEIGHT_AVAILABILITY` | Availability weight (default: 0.15) | `0.15` |
 
 `.env` is git-ignored. Only `.env.example` (placeholders) is committed.
+
 
 </details>
 
@@ -396,8 +401,10 @@ mysql -u <your_user> -p hiring_ops < sql_detective.sql
 | **Q4** | Final-stage conversion per recruiter (min. 3 Finals) | `HAVING COUNT(*) >= 3`, `1.0 *` to avoid integer division | Priya Shah 75.00%, Daniel Ortiz 50.00% |
 | **Q5** | Bonus: top recruiter per department | `RANK() OVER (PARTITION BY department ORDER BY placements DESC)` | Engineering: Priya Shah (3), Data: Fatima Al-Sayed (1) |
 
+- **Schema note:** there is no `applications` table in the given dataset, so "applied to a posting" is inferred from records in the `interviews` table.
 - **Q3:** applicants 1 and 2 are the same person (Ananya Rao) with emails that differ only by capitalization. Grouping by raw email or applicant id would miss her.
 - **Q5:** `RANK()` keeps ties, so two recruiters tied for first both appear. `ROW_NUMBER()` would pick one arbitrarily.
+
 
 ---
 
