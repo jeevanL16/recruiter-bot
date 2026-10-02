@@ -63,18 +63,20 @@ $$\text{Score} = 100 \times (0.55 \times \text{Skills} + 0.20 \times \text{Exper
 
 ### 🚀 Quick Start
 
+**Option A: Local Python & MySQL**
 ```bash
-# 1. Setup environment & dependencies
 python -m venv .venv; .venv\Scripts\Activate.ps1
 pip install -e ".[dev]" && copy .env.example .env
-
-# 2. Initialize database, seed data & compute matches
 python -m app.seed
-
-# 3. Launch development server
 uvicorn app.main:app --reload
 ```
-Interactive Swagger UI: `http://localhost:8000/docs`.
+
+**Option B: Docker Compose (Zero Setup)**
+```bash
+docker compose up --build -d
+docker compose exec app python -m app.seed
+```
+Interactive Swagger UI: `http://localhost:8000/docs` (Stop Docker with `docker compose down`).
 
 ---
 
