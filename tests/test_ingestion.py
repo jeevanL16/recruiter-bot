@@ -1,6 +1,7 @@
 """Tests for ingestion service and transaction guarantees."""
 
 import contextlib
+from collections.abc import Generator
 
 import pytest
 from mysql.connector.pooling import PooledMySQLConnection
@@ -11,7 +12,7 @@ from app.services.ingestion import ingest_data, load_seed_file
 
 
 @pytest.fixture
-def db_conn() -> PooledMySQLConnection:
+def db_conn() -> Generator[PooledMySQLConnection, None, None]:
     conn_gen = get_conn()
     conn = next(conn_gen)
     try:
@@ -19,6 +20,7 @@ def db_conn() -> PooledMySQLConnection:
     finally:
         with contextlib.suppress(StopIteration):
             next(conn_gen)
+
 
 
 def test_seed_json_structure() -> None:

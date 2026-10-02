@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -11,10 +12,11 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 
 @pytest.fixture
-def seed_data() -> dict:
+def seed_data() -> dict[str, Any]:
     seed_file = DATA_DIR / "seed.json"
     with open(seed_file, encoding="utf-8") as f:
-        return json.load(f)
+        return cast(dict[str, Any], json.load(f))
+
 
 
 @pytest.fixture

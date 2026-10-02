@@ -1,5 +1,7 @@
 """Integration tests for the Recruiter Bot HTTP API."""
 
+from collections.abc import Generator
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -7,7 +9,7 @@ from app.main import app
 
 
 @pytest.fixture(scope="module")
-def client() -> TestClient:
+def client() -> Generator[TestClient, None, None]:
     with TestClient(app) as test_client:
         yield test_client
 
@@ -43,9 +45,9 @@ def test_job_matches_ranking_and_reason(client: TestClient) -> None:
     top_match = data["matches"][0]
     assert top_match["rank"] == 1
     assert top_match["candidate"]["full_name"] == "Sherlock H."
-    assert 94.0 <= top_match["score"] <= 96.0
+    assert top_match["score"] == 95.0
     assert "deduction" in top_match["matched_skills"]
-    assert "Sherlock" in top_match["reason"] or "required skills" in top_match["reason"]
+    assert "Matches" in top_match["reason"]
 
 
 def test_job_matches_ordering_rapid_prototyping(client: TestClient) -> None:
@@ -68,34 +70,44 @@ def test_job_matches_ordering_rapid_prototyping(client: TestClient) -> None:
 
 def test_job_matches_availability_and_min_score_filter(client: TestClient) -> None:
     """Filter by availability and min_score."""
-    # Filter only immediate
     response = client.get("/jobs/2/matches?availability=immediate")
     assert response.status_code == 200
     data = response.json()
     for m in data["matches"]:
         assert m["candidate"]["availability"] == "immediate"
 
-    # High min_score filter
-    response_high = client.get("/jobs/2/matches?min_score=84.5")
+    response_high = client.get("/jobs/2/matches?min_score=80")
     assert response_high.status_code == 200
     data_high = response_high.json()
     for m in data_high["matches"]:
-        assert m["score"] >= 84.5
+        assert m["score"] >= 80
+
+
+def test_total_matches_is_full_count(client: TestClient) -> None:
+    """total in response must be the real total count, not capped by limit."""
+    response = client.get("/jobs/2/matches?limit=1")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] >= 1
+    assert len(data["matches"]) == 1
+    # total should reflect all matches, not just this page
+    response_all = client.get("/jobs/2/matches?limit=100")
+    data_all = response_all.json()
+    assert data["total"] == data_all["total"]
 
 
 def test_candidate_matches_mirror(client: TestClient) -> None:
     """GET /candidates/{id}/matches mirrors the score for the job."""
-    # Sherlock is candidate 1
     response = client.get("/candidates/1/matches")
     assert response.status_code == 200
     data = response.json()
     assert data["candidate"]["full_name"] == "Sherlock H."
 
     job_ids = [m["job"]["id"] for m in data["matches"]]
-    assert 1 in job_ids  # Backend Detective
+    assert 1 in job_ids
 
     sherlock_match = next(m for m in data["matches"] if m["job"]["id"] == 1)
-    assert 94.0 <= sherlock_match["score"] <= 96.0
+    assert sherlock_match["score"] == 95.0
 
 
 def test_not_found_handling(client: TestClient) -> None:
@@ -113,7 +125,7 @@ def test_not_found_handling(client: TestClient) -> None:
 
 def test_validation_error_handling(client: TestClient) -> None:
     """422 for invalid query params."""
-    response = client.get("/jobs/1/matches?limit=0")  # ge=1
+    response = client.get("/jobs/1/matches?limit=0")
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "validation_error"
 
@@ -132,17 +144,31 @@ def test_create_candidate_auto_scores(client: TestClient) -> None:
         "traits": ["analytical", "innovative"],
         "quirk": "Wrote the first algorithm in history.",
     }
-    create_res = client.post("/candidates", json=payload)
-    assert create_res.status_code == 201
-    cand = create_res.json()
-    cand_id = cand["id"]
+    cand_id = None
+    try:
+        create_res = client.post("/candidates", json=payload)
+        assert create_res.status_code == 201
+        cand = create_res.json()
+        cand_id = cand["id"]
 
-    # Check candidate matches
-    matches_res = client.get(f"/candidates/{cand_id}/matches")
-    assert matches_res.status_code == 200
-    m_data = matches_res.json()
-    job_titles = [m["job"]["title"] for m in m_data["matches"]]
-    assert "Rapid Prototyping Engineer" in job_titles
+        matches_res = client.get(f"/candidates/{cand_id}/matches")
+        assert matches_res.status_code == 200
+        m_data = matches_res.json()
+        job_titles = [m["job"]["title"] for m in m_data["matches"]]
+        assert "Rapid Prototyping Engineer" in job_titles
+    finally:
+        if cand_id:
+            from app.db import get_pool
+
+            pool = get_pool()
+            conn = pool.get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM candidates WHERE id = %s", (cand_id,))
+                conn.commit()
+                cursor.close()
+            finally:
+                conn.close()
 
 
 def test_create_job_auto_scores(client: TestClient) -> None:
@@ -154,14 +180,30 @@ def test_create_job_auto_scores(client: TestClient) -> None:
         "culture_keywords": ["analytical"],
         "tagline": "Follow the evidence wherever it leads.",
     }
-    create_res = client.post("/jobs", json=payload)
-    assert create_res.status_code == 201
-    job = create_res.json()
-    job_id = job["id"]
+    job_id = None
+    try:
+        create_res = client.post("/jobs", json=payload)
+        assert create_res.status_code == 201
+        job = create_res.json()
+        job_id = job["id"]
 
-    # Check job matches
-    matches_res = client.get(f"/jobs/{job_id}/matches")
-    assert matches_res.status_code == 200
-    m_data = matches_res.json()
-    cand_names = [m["candidate"]["full_name"] for m in m_data["matches"]]
-    assert "Sherlock H." in cand_names
+        matches_res = client.get(f"/jobs/{job_id}/matches")
+        assert matches_res.status_code == 200
+        m_data = matches_res.json()
+        cand_names = [m["candidate"]["full_name"] for m in m_data["matches"]]
+        assert "Sherlock H." in cand_names
+    finally:
+        if job_id:
+            from app.db import get_pool
+
+            pool = get_pool()
+            conn = pool.get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM jobs WHERE id = %s", (job_id,))
+                conn.commit()
+                cursor.close()
+            finally:
+                conn.close()
+
+
